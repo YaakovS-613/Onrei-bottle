@@ -16,13 +16,13 @@
 int PinForward=5;
 int PinBackward=4;
 int SET_T = 70;
-int HEATBUTTON = 3;
-int COLDBUTTON = 2;
+int heatpin = 3;
+int coldpin = 2;
 int HEATBUTTONp = 0;
 int COLDBUTTONp = 0;
-bool FAHRENHEIT = 1;
+bool FAHRENHEIT = TRUE;
 const int ONE_WIRE_BUS = A0;
-float CURRENT = 0;
+float temperature = 0;
 
 // Declaration for an SSD1306 display connected to I2C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); // -1 means no hardware reset pin
@@ -54,8 +54,23 @@ void disptemp() {
   display.setTextSize(2);
   display.setCursor(95, 17);
   display.print("o");
-
+  // update display
   display.display();
+}
+
+void change_peltier_temp() {
+  if (temperature < SET_T) {
+    digitalWrite(PinForward,HIGH);
+    digitalWrite(PinBackward,LOW);
+  }
+  if (temperature > SET_T) {
+    digitalWrite(PinForward,LOW);
+    digitalWrite(PinBackward,HIGH);
+  }
+   if (temperature == SET_T) {
+    digitalWrite(PinForward,LOW);
+    digitalWrite(PinBackward,LOW);
+  }
 }
 
 void setup() {
@@ -67,10 +82,10 @@ void setup() {
   pinMode(PinBackward,OUTPUT);
   digitalWrite(PinForward,LOW);
   digitalWrite(PinBackward,LOW);
-  pinMode(HEATBUTTON, INPUT_PULLUP);
-  pinMode(COLDBUTTON, INPUT_PULLUP);
+  pinMode(heatpin, INPUT_PULLUP);
+  pinMode(coldpin, INPUT_PULLUP);
   
-  // Initialize the display with the I2C address 0x3C (most common)
+  // Initialize the display with the I2C address 0x3C
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
@@ -81,30 +96,22 @@ void setup() {
 
 void loop() {
   unsigned long lastTempRead = 0;
-  const unsigned long TEMP_READ_DELAY = 1000; // 1000 ms = 1 second
-  loopstart:
-  delay(100);
-  HEATBUTTONp = digitalRead(HEATBUTTON);
-  COLDBUTTONp = digitalRead(COLDBUTTON);
-  if (HEATBUTTONp == HIGH and COLDBUTTONp == HIGH) {
-    if (FAHRENHEIT == 1){
+  const unsigned long TEMP_READ_DELAY = 1000;
+  HEATBUTTONp = digitalRead(heatpin);
+  COLDBUTTONp = digitalRead(coldpin);
+    if (HEATBUTTONp == HIGH) {
+    SET_T ++;
+  } else if (COLDBUTTONp == HIGH) {
+    SET_T --;
+  } else if (HEATBUTTONp == HIGH and COLDBUTTONp == HIGH) {
+    if (FAHRENHEIT == TRUE){
       SET_T = (SET_T - 32) / 1.8;
-      FAHRENHEIT = 0;
+      FAHRENHEIT = FALSE;
     }else{
       SET_T = (SET_T * 1.8)+32;
-      FAHRENHEIT = 1;
+      FAHRENHEIT = TRUE;
     }
-    disptemp();
     delay(100);
-    goto loopstart;
-  }
-  if (HEATBUTTONp == HIGH) {
-    SET_T ++;
-    disptemp();
-  }
-  if (COLDBUTTONp == HIGH) {
-    SET_T --;
-    disptemp();
   }
 
   if (millis() - lastTempRead >= TEMP_READ_DELAY) {
@@ -120,16 +127,5 @@ void loop() {
 
   disptemp();
   }
-  if (CURRENT<SET_T) {
-    digitalWrite(PinForward,HIGH);
-    digitalWrite(PinBackward,LOW);
-  }
-  if (CURRENT>SET_T) {
-    digitalWrite(PinForward,LOW);
-    digitalWrite(PinBackward,HIGH);
-  }
-   if (CURRENT==SET_T) {
-    digitalWrite(PinForward,LOW);
-    digitalWrite(PinBackward,LOW);
-  }
+  changetemp();
 }
