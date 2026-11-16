@@ -20,7 +20,7 @@ int heatpin = 3;
 int coldpin = 2;
 int HEATBUTTONp = 0;
 int COLDBUTTONp = 0;
-bool FAHRENHEIT = TRUE;
+bool FAHRENHEIT = 1;
 const int ONE_WIRE_BUS = A0;
 float temperature = 0;
 
@@ -50,7 +50,7 @@ void disptemp() {
 
   display.setTextSize(6);
   display.setCursor(25,17);
-  display.print(CURRENT);
+  display.print(temperature);
   display.setTextSize(2);
   display.setCursor(95, 17);
   display.print("o");
@@ -104,12 +104,12 @@ void loop() {
   } else if (COLDBUTTONp == HIGH) {
     SET_T --;
   } else if (HEATBUTTONp == HIGH and COLDBUTTONp == HIGH) {
-    if (FAHRENHEIT == TRUE){
+    if (FAHRENHEIT == 1){
       SET_T = (SET_T - 32) / 1.8;
-      FAHRENHEIT = FALSE;
+      FAHRENHEIT = 0;
     }else{
       SET_T = (SET_T * 1.8)+32;
-      FAHRENHEIT = TRUE;
+      FAHRENHEIT = 1;
     }
     delay(100);
   }
@@ -120,12 +120,12 @@ void loop() {
   sensors.requestTemperatures();
 
   if (FAHRENHEIT == 1) {
-    CURRENT = sensors.getTempFByIndex(0);
+    temperature = sensors.getTempFByIndex(0);
   } else {
-    CURRENT = sensors.getTempCByIndex(0);
+    temperature = sensors.getTempCByIndex(0);
   }
 
   disptemp();
   }
-  changetemp();
+  change_peltier_temp();
 }
